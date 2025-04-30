@@ -18,6 +18,12 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Debug SSH Key Setup
+        run: |
+          echo "SSH private key loaded:"
+          cat ~/.ssh/id_ed25519
+          ssh-add -l  # This will list the loaded SSH keys
+
       # Set up rclone config file on the remote server (if not already present)
       - name: Set up rclone config
         run: |
