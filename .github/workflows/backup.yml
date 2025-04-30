@@ -1,29 +1,58 @@
-name: Backup to Google Drive
+name: Remote Server Backup to Google Drive
 
 on:
-  workflow_dispatch:  # manually trigger or schedule this
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 3 AM UTC
+  workflow_dispatch:     # Allow manual trigger
 
 jobs:
   backup:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
+      - name: Checkout (optional)
         uses: actions/checkout@v3
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
 
       - name: Install rclone
         run: |
           curl https://rclone.org/install.sh | sudo bash
 
-      - name: Set up Service Account
+      - name: Upload backup via rclone
         run: |
-          mkdir -p ~/.config/rclone
-          echo "${{ secrets.RCLONE_SERVICE_ACCOUNT }}" > ~/.config/rclone/sa.json
-          echo "[gdrive]
-type = drive
-scope = drive.file
-service_account_file = /home/runner/.config/rclone/sa.json" > ~/.config/rclone/rclone.conf
-
-      - name: Upload backup folder to Google Drive
-        run: |
-          rclone copy ./data gdrive:github-backups/${{ github.repository }} --create-dirs
+          ssh -i ~/.ssh/id_rsa ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
+            DATE=$(date +%Y-%m-%d)
+            rclone copy / \
+              gdrive:/backups/$DATE \
+              --create-dirs \
+              --exclude "/bin/**" \
+              --exclude "/boot/**" \
+              --exclude "/dev/**" \
+              --exclude "/lib*/**" \
+              --exclude "/lost+found/**" \
+              --exclude "/media/**" \
+              --exclude "/mnt/**" \
+              --exclude "/proc/**" \
+              --exclude "/run/**" \
+              --exclude "/sbin/**" \
+              --exclude "/snap/**" \
+              --exclude "/srv/**" \
+              --exclude "/sys/**" \
+              --exclude "/tmp/**" \
+              --exclude "/var/log/**" \
+              --exclude "/var/tmp/**" \
+              --include "/etc/**" \
+              --include "/home/**" \
+              --include "/opt/**" \
+              --include "/root/**" \
+              --include "/usr/local/**" \
+              --include "/var/www/**" \
+              --include "/srv/data/**"
+          EOF
 
