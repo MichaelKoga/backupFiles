@@ -36,6 +36,11 @@ jobs:
           ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
           cat ~/.ssh/known_hosts  # Verify the known hosts file
 
+      # Copy the filter file to the remote server before the backup starts
+      - name: Copy filter file to remote server
+        run: |
+          scp -i ~/.ssh/id_ed25519 rclone-backup-filter.txt ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/home/${{ secrets.REMOTE_USER }}/rclone-backup-filter.txt
+
       # Run your backup command on the remote server
       - name: Run backup on remote server
         run: |
