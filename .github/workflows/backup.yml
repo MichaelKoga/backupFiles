@@ -37,29 +37,29 @@ jobs:
       - name: Run backup on remote server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
-            rclone copy / \
-              gdrive:/server-backups/$(date +%F) \
+            rclone copy / gdrive:/server-backups/$(date +%F) \
               --config ~/.config/rclone/rclone.conf \
               --drive-service-account-file ~/.config/rclone/sa.json \
               --log-level INFO \
-              --exclude /proc/** \
-              --exclude /sys/** \
-              --exclude /dev/** \
-              --exclude /tmp/** \
-              --exclude /run/** \
-              --exclude /mnt/** \
-              --exclude /media/** \
-              --exclude /lost+found/** \
-              --exclude /snap/** \
-              --exclude /var/cache/** \
-              --exclude /var/tmp/** \
-              --exclude /var/run/** \
-              --exclude /swapfile \
-              --include /etc/** \
-              --include /home/** \
-              --include /root/** \
-              --include /var/www/** \
-              --include /usr/local/** \
+              --filter "- /proc/**" \
+              --filter "- /sys/**" \
+              --filter "- /dev/**" \
+              --filter "- /tmp/**" \
+              --filter "- /run/**" \
+              --filter "- /mnt/**" \
+              --filter "- /media/**" \
+              --filter "- /lost+found/**" \
+              --filter "- /snap/**" \
+              --filter "- /var/cache/**" \
+              --filter "- /var/tmp/**" \
+              --filter "- /var/run/**" \
+              --filter "- /swapfile" \
+              --filter "+ /etc/**" \
+              --filter "+ /home/**" \
+              --filter "+ /root/**" \
+              --filter "+ /var/www/**" \
+              --filter "+ /usr/local/**" \
+              --filter "- **" \
               --create-empty-src-dirs
           EOF
 
