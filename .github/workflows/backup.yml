@@ -1,32 +1,40 @@
 name: Remote Server Backup to Google Drive
 
 on:
-  schedule:
-    - cron: '0 3 * * *'  # Daily at 3 AM UTC
-  workflow_dispatch:     # Allow manual trigger
+  workflow_dispatch: # Allows manual triggering of the workflow
 
 jobs:
   backup:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout (optional)
-        uses: actions/checkout@v3
+      # Checkout repository (optional, depending on if you're storing rclone config or other scripts)
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
+      # Set up SSH key
       - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Install rclone
+      # Set up rclone config file on the remote server (if not already present)
+      - name: Set up rclone config
         run: |
-          curl https://rclone.org/install.sh | sudo bash
+          mkdir -p ~/.config/rclone
+          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
 
-      - name: Upload backup via rclone
+      # Install rclone on remote host (optional)
+      - name: Install rclone on remote server
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
+          ssh -t -i ~/.ssh/id_rsa ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
+            curl https://rclone.org/install.sh | sudo bash
+          EOF
+
+      # Run rclone backup from remote server to Google Drive
+      - name: Run backup on remote server
+        run: |
+          ssh -t -i ~/.ssh/id_rsa ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
             DATE=$(date +%Y-%m-%d)
             rclone copy / \
               gdrive:/backups/$DATE \
