@@ -27,7 +27,7 @@ jobs:
       # Install rclone on remote host (optional)
       - name: Install rclone on remote server
         run: |
-          ssh -t -i ~/.ssh/id_rsa ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
+          ssh -t -i ~/.ssh/id_ed25519 ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
             curl https://rclone.org/install.sh | sudo bash
           EOF
 
