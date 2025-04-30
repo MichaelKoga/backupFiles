@@ -1,0 +1,5 @@
++ /etc/**
++ /home/**
++ /var/log/**
++ /var/backups/**
+- **
