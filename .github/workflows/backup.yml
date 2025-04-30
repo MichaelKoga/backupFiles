@@ -1,12 +1,12 @@
 name: Backup to Google Drive
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-  schedule:
-    - cron: '0 8 * * *'  # 12 AM PST = 8 AM UTC
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch:
+#   schedule:
+#     - cron: '0 8 * * *'  # 12 AM PST = 8 AM UTC
     
 jobs:
   backup:
