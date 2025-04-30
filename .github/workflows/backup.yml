@@ -1,0 +1,29 @@
+name: Backup to Google Drive
+
+on:
+  workflow_dispatch:  # manually trigger or schedule this
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+
+      - name: Set up Service Account
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "${{ secrets.RCLONE_SERVICE_ACCOUNT }}" > ~/.config/rclone/sa.json
+          echo "[gdrive]
+type = drive
+scope = drive.file
+service_account_file = /home/runner/.config/rclone/sa.json" > ~/.config/rclone/rclone.conf
+
+      - name: Upload backup folder to Google Drive
+        run: |
+          rclone copy ./data gdrive:github-backups/${{ github.repository }} --create-dirs
+
