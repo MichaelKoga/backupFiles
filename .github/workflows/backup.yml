@@ -1,72 +1,41 @@
-name: Remote Server Backup to Google Drive
+name: Backup to Google Drive
 
 on:
-  workflow_dispatch: # Allows manual triggering of the workflow
+  push:
+    branches:
+      - main
 
 jobs:
   backup:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repository (optional, depending on if you're storing rclone config or other scripts)
-      - name: Checkout repository
+      # Checkout code if needed
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      # Set up SSH key
+      # Set up SSH key using the ssh-agent action
       - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      # Debug step: Check if the SSH key is loaded
       - name: Debug SSH Key Setup
         run: |
           echo "SSH private key loaded:"
-          cat ~/.ssh/id_ed25519
           ssh-add -l  # This will list the loaded SSH keys
 
-      # Set up rclone config file on the remote server (if not already present)
-      - name: Set up rclone config
+      # Add remote host to known hosts to avoid SSH verification failures
+      - name: Add remote host to known hosts
         run: |
-          mkdir -p ~/.config/rclone
-          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
+          cat ~/.ssh/known_hosts  # Verify the known hosts file
 
-      # Install rclone on remote host (optional)
-      - name: Install rclone on remote server
-        run: |
-          ssh -t -i ~/.ssh/id_ed25519 ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
-            curl https://rclone.org/install.sh | sudo bash
-          EOF
-
-      # Run rclone backup from remote server to Google Drive
+      # Run your backup command on the remote server
       - name: Run backup on remote server
         run: |
-          ssh -t -i ~/.ssh/id_rsa ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
-            DATE=$(date +%Y-%m-%d)
-            rclone copy / \
-              gdrive:/backups/$DATE \
-              --create-dirs \
-              --exclude "/bin/**" \
-              --exclude "/boot/**" \
-              --exclude "/dev/**" \
-              --exclude "/lib*/**" \
-              --exclude "/lost+found/**" \
-              --exclude "/media/**" \
-              --exclude "/mnt/**" \
-              --exclude "/proc/**" \
-              --exclude "/run/**" \
-              --exclude "/sbin/**" \
-              --exclude "/snap/**" \
-              --exclude "/srv/**" \
-              --exclude "/sys/**" \
-              --exclude "/tmp/**" \
-              --exclude "/var/log/**" \
-              --exclude "/var/tmp/**" \
-              --include "/etc/**" \
-              --include "/home/**" \
-              --include "/opt/**" \
-              --include "/root/**" \
-              --include "/usr/local/**" \
-              --include "/var/www/**" \
-              --include "/srv/data/**"
+          ssh -t ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
+            # Your rclone backup command here
           EOF
-
