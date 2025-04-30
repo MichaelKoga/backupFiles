@@ -36,6 +36,30 @@ jobs:
       # Run your backup command on the remote server
       - name: Run backup on remote server
         run: |
-          ssh -t ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
-            # Your rclone backup command here
+          ssh -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
+            rclone copy / \
+              gdrive:/server-backups/$(date +%F) \
+              --config ~/.config/rclone/rclone.conf \
+              --drive-service-account-file ~/.config/rclone/sa.json \
+              --log-level INFO \
+              --exclude /proc/** \
+              --exclude /sys/** \
+              --exclude /dev/** \
+              --exclude /tmp/** \
+              --exclude /run/** \
+              --exclude /mnt/** \
+              --exclude /media/** \
+              --exclude /lost+found/** \
+              --exclude /snap/** \
+              --exclude /var/cache/** \
+              --exclude /var/tmp/** \
+              --exclude /var/run/** \
+              --exclude /swapfile \
+              --include /etc/** \
+              --include /home/** \
+              --include /root/** \
+              --include /var/www/** \
+              --include /usr/local/** \
+              --create-empty-src-dirs
           EOF
+
